@@ -92,8 +92,8 @@ export default async function handler(req, res) {
         aadhaar: extractedRecord.id || "Not Found" 
       },
       // Zeno Branding & Contact Info (Bottom mein)
-      brand: "Zeno",
-      developer: "@developer_NovaG",
+    
+      developer: "@Zeno098",
       notice: "This API is exclusively for active users.",
       contact: "To buy this API, message on WhatsApp: +63 962 065 8587 (Serious buyers only: Just sending 'hello' will not get a reply)"
     };
