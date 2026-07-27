@@ -71,10 +71,18 @@ export default async function handler(req, res) {
 
     const upstreamData = await response.json();
 
-    // 7. Data Extractor Logic
+     // 7. Data Extractor Logic
     let extractedRecord = {};
-    if (upstreamData.data && Array.isArray(upstreamData.data) && upstreamData.data.length > 0) {
-      extractedRecord = upstreamData.data[0]; 
+    
+    if (upstreamData.data) {
+      // Check if data is an object with a "0" key (as seen in the screenshot)
+      if (typeof upstreamData.data === 'object' && !Array.isArray(upstreamData.data) && upstreamData.data["0"]) {
+        extractedRecord = upstreamData.data["0"];
+      } 
+      // Fallback just in case the upstream API switches to returning an actual array later
+      else if (Array.isArray(upstreamData.data) && upstreamData.data.length > 0) {
+        extractedRecord = upstreamData.data[0]; 
+      }
     } else if (Array.isArray(upstreamData) && upstreamData.length > 0) {
       extractedRecord = upstreamData[0];
     } else {
@@ -82,7 +90,8 @@ export default async function handler(req, res) {
     }
     
     // 7.5 Agar data na mile (Data Not Found Check)
-    if (!extractedRecord || Object.keys(extractedRecord).length === 0 || !extractedRecord.name) {
+    // FIX: Changed extractedRecord.name to extractedRecord.NAME to match upstream payload
+    if (!extractedRecord || Object.keys(extractedRecord).length === 0 || !extractedRecord.NAME) {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(200).send(JSON.stringify({
         status: false,
@@ -93,7 +102,7 @@ export default async function handler(req, res) {
         bought_from: "WhatsApp: +63 962 065 8587 | Telegram: @Zeno098"
       }, null, 2));
     }
-    
+
     // 8. Ekdum Clean aur Normal JSON format (With 'bought_from')
     const cleanResponse = {
       status: true,
