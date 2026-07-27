@@ -2,10 +2,10 @@ import fs from 'fs';
 import path from 'path';
 
 export default async function handler(req, res) {
-  const { num, apiKey } = req.query;
+  const { num, Key } = req.query;
 
   // 1. API Key Check (Missing Key)
-  if (!apiKey) {
+  if (!Key) {
     return res.status(401).json({ 
       success: false, 
       message: "API key missing! To BUY this API, message on WhatsApp: +63 962 065 8587 or Telegram: @Zeno098",
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   }
 
   // 3. Validate API Key (Invalid Key)
-  const userRecord = keysData[apiKey];
+  const userRecord = keysData[Key];
   if (!userRecord) {
     return res.status(403).json({ 
       success: false, 
