@@ -62,7 +62,7 @@ export default async function handler(req, res) {
   try {
     // 6. Upstream API se Data Fetch Karna
     const response = await fetch(
-      `https://free-api-anuragsingh.vercel.app/api/number?num=${encodeURIComponent(num)}`
+      `https://hitech-info-noobster.com-dashbord63hh7qe4.workers.dev/search?mobile=${encodeURIComponent(num)}`
     );
 
     if (!response.ok) {
