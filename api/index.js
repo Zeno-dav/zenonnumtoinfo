@@ -95,7 +95,6 @@ export default async function handler(req, res) {
         alternateNumber: extractedRecord.alternate || "Not Found",
         aadhaar: extractedRecord.id || "Not Found" 
       },
-      brand: "Zeno",
       developer: "@Zeno098",
       bought_from: "WhatsApp: +63 962 065 8587 | Telegram: @Zeno098", // Yahan show hoga kahan se buy kiya hai
       notice: "This API is exclusively for active users.",
