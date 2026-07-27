@@ -80,7 +80,20 @@ export default async function handler(req, res) {
     } else {
       extractedRecord = upstreamData;
     }
-
+    
+    // 7.5 Agar data na mile (Data Not Found Check)
+    if (!extractedRecord || Object.keys(extractedRecord).length === 0 || !extractedRecord.name) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(200).send(JSON.stringify({
+        status: false,
+        message: "Database mein data nahi hai (Data not found)",
+        number: num,
+        brand: "Zeno",
+        developer: "@Zeno098",
+        bought_from: "WhatsApp: +63 962 065 8587 | Telegram: @Zeno098"
+      }, null, 2));
+    }
+    
     // 8. Ekdum Clean aur Normal JSON format (With 'bought_from')
     const cleanResponse = {
       status: true,
