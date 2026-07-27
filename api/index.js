@@ -98,8 +98,9 @@ export default async function handler(req, res) {
       contact: "To buy this API, message on WhatsApp: +63 962 065 8587 (Serious buyers only: Just sending 'hello' will not get a reply)"
     };
 
-    // Return Clean JSON
-    return res.status(200).json(cleanResponse);
+        // Return Formatted (Pretty) JSON
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    return res.status(200).send(JSON.stringify(cleanResponse, null, 2));
 
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
