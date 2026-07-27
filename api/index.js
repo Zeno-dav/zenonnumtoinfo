@@ -83,13 +83,13 @@ export default async function handler(req, res) {
       status: true,
       message: "Data fetched successfully",
       number: num,
-      details: {
+            details: {
         name: extractedRecord.name || "Not Found",
         fatherName: extractedRecord.fname || "Not Found",
         address: extractedRecord.address || "Not Found",
         circle: extractedRecord.circle || "Not Found",
         alternateNumber: extractedRecord.alternate || "Not Found",
-        aadhaar: extractedRecord.id || "Not Found"
+        aadhaar: extractedRecord.id || "Not Found" 
       },
       // Zeno Branding & Contact Info (Bottom mein)
       brand: "Zeno",
