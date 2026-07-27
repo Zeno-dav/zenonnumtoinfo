@@ -109,7 +109,7 @@ export default async function handler(req, res) {
       address: record.ADDRESS || "Not Found",
       circle: record.circle || "Not Found",
       Number: record.MOBILE|| "Not Found",
-      alternateNumber: record.alt || "Not Found",
+      alternate: record.alt || "Not Found",
       aadhaar: record.id || "Not Found", 
       email: record.email || "Not Found"
     }));
