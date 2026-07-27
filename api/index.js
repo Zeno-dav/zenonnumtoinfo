@@ -4,12 +4,14 @@ import path from 'path';
 export default async function handler(req, res) {
   const { num, apiKey } = req.query;
 
-  // 1. API Key Check
+  // 1. API Key Check (Missing Key)
   if (!apiKey) {
     return res.status(401).json({ 
       success: false, 
-      message: "API key missing. This API is exclusively for active users. To buy, message on WhatsApp: +63 962 065 8587 (Serious buyers only: Just sending 'hello' will not get a reply).",
-      developer: "@developer_NovaG"
+      message: "API key missing! To BUY this API, message on WhatsApp: +63 962 065 8587 or Telegram: @Zeno098",
+      buy_contact: "WhatsApp: +63 962 065 8587",
+      telegram: "@Zeno098",
+      developer: "@Zeno098"
     });
   }
 
@@ -21,28 +23,31 @@ export default async function handler(req, res) {
     keysData = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
   }
 
-  // 3. Validate API Key
+  // 3. Validate API Key (Invalid Key)
   const userRecord = keysData[apiKey];
   if (!userRecord) {
     return res.status(403).json({ 
       success: false, 
-      message: "Invalid API key. This API is exclusively for active users.",
-      developer: "@developer_NovaG"
+      message: "Invalid API key! To BUY a valid API, message on WhatsApp: +63 962 065 8587 or Telegram: @Zeno098",
+      buy_contact: "WhatsApp: +63 962 065 8587",
+      telegram: "@Zeno098",
+      developer: "@Zeno098"
     });
   }
 
-  // 4. AUTOMATIC EXPIRY DATE CALCULATION
+  // 4. AUTOMATIC EXPIRY DATE CALCULATION (Expired Key)
   const startDate = new Date(userRecord.startDate);
   const expiryDate = new Date(startDate);
-  expiryDate.setDate(expiryDate.getDate() + userRecord.days); // Start date mein days jod diye
+  expiryDate.setDate(expiryDate.getDate() + userRecord.days); 
 
   const currentTime = new Date();
   if (currentTime > expiryDate) {
     return res.status(403).json({ 
       success: false, 
-      message: `This API was expired on ${expiryDate.toDateString()}`,
-      developer: "@developer_NovaG",
-      contact: "To buy, message on WhatsApp: +63 962 065 8587"
+      message: `This API expired on ${expiryDate.toDateString()}! To RENEW or BUY, message on WhatsApp: +63 962 065 8587 or Telegram: @Zeno098`,
+      buy_contact: "WhatsApp: +63 962 065 8587",
+      telegram: "@Zeno098",
+      developer: "@Zeno098"
     });
   }
 
@@ -50,7 +55,7 @@ export default async function handler(req, res) {
   if (!num) {
     return res.status(400).json({ 
       success: false, 
-      message: "num parameter missing" 
+      message: "num parameter missing. Please provide a valid number." 
     });
   }
 
@@ -76,11 +81,11 @@ export default async function handler(req, res) {
       extractedRecord = upstreamData;
     }
 
-    // 8. Ekdum Clean aur Normal JSON format (With User Name)
+    // 8. Ekdum Clean aur Normal JSON format (With 'bought_from')
     const cleanResponse = {
       status: true,
       message: "Data fetched successfully",
-      api_user: userRecord.name, // <--- YAHAN USER KA NAAM AAYEGA
+      api_user: userRecord.name, 
       number: num,
       details: {
         name: extractedRecord.name || "Not Found",
@@ -88,14 +93,16 @@ export default async function handler(req, res) {
         address: extractedRecord.address || "Not Found",
         circle: extractedRecord.circle || "Not Found",
         alternateNumber: extractedRecord.alternate || "Not Found",
-        aadhaar: extractedRecord.id || "Not Found" // ID mapping fixed
+        aadhaar: extractedRecord.id || "Not Found" 
       },
-      developer: "@zeno098",
+      brand: "Zeno",
+      developer: "@Zeno098",
+      bought_from: "WhatsApp: +63 962 065 8587 | Telegram: @Zeno098", // Yahan show hoga kahan se buy kiya hai
       notice: "This API is exclusively for active users.",
-      contact: "To buy this API, message on WhatsApp: +63 962 065 8587 (Serious buyers only)"
+      buy_more: "To buy more APIs, message on WhatsApp: +63 962 065 8587 or Telegram: @Zeno098"
     };
 
-    // 9. Return Formatted (Pretty) JSON taaki ek line mein na aaye
+    // 9. Return Formatted (Pretty) JSON
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).send(JSON.stringify(cleanResponse, null, 2));
 
