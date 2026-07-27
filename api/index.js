@@ -70,28 +70,25 @@ export default async function handler(req, res) {
     }
 
     const upstreamData = await response.json();
-
-     // 7. Data Extractor Logic
-    let extractedRecord = {};
+    // 7. Data Extractor Logic (Extract ALL records)
+    let rawDataArray = [];
     
+    // Convert the upstream data into a proper array
     if (upstreamData.data) {
-      // Check if data is an object with a "0" key (as seen in the screenshot)
-      if (typeof upstreamData.data === 'object' && !Array.isArray(upstreamData.data) && upstreamData.data["0"]) {
-        extractedRecord = upstreamData.data["0"];
-      } 
-      // Fallback just in case the upstream API switches to returning an actual array later
-      else if (Array.isArray(upstreamData.data) && upstreamData.data.length > 0) {
-        extractedRecord = upstreamData.data[0]; 
+      if (typeof upstreamData.data === 'object' && !Array.isArray(upstreamData.data)) {
+        // Convert object like {"0": {...}, "1": {...}} into an array of objects
+        rawDataArray = Object.values(upstreamData.data);
+      } else if (Array.isArray(upstreamData.data)) {
+        rawDataArray = upstreamData.data;
       }
-    } else if (Array.isArray(upstreamData) && upstreamData.length > 0) {
-      extractedRecord = upstreamData[0];
-    } else {
-      extractedRecord = upstreamData;
+    } else if (Array.isArray(upstreamData)) {
+      rawDataArray = upstreamData;
+    } else if (upstreamData && typeof upstreamData === 'object') {
+      rawDataArray = [upstreamData];
     }
     
     // 7.5 Agar data na mile (Data Not Found Check)
-    // FIX: Changed extractedRecord.name to extractedRecord.NAME to match upstream payload
-    if (!extractedRecord || Object.keys(extractedRecord).length === 0 || !extractedRecord.NAME) {
+    if (!rawDataArray || rawDataArray.length === 0 || !rawDataArray[0] || !rawDataArray[0].NAME) {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(200).send(JSON.stringify({
         status: false,
@@ -103,27 +100,30 @@ export default async function handler(req, res) {
       }, null, 2));
     }
 
-    // 8. Ekdum Clean aur Normal JSON format (With 'bought_from')
+    // Map through ALL records and clean them up
+    const allFormattedRecords = rawDataArray.map(record => ({
+      name: record.NAME || "Not Found",
+      fatherName: record.fname || "Not Found",
+      address: record.ADDRESS || "Not Found",
+      circle: record.circle || "Not Found",
+      alternateNumber: record.alt || "Not Found",
+      aadhaar: record.id || "Not Found", 
+      email: record.email || "Not Found"
+    }));
+    
+    // 8. Ekdum Clean aur Normal JSON format (With ALL records)
     const cleanResponse = {
       status: true,
       message: "Data fetched successfully",
       api_user: userRecord.name, 
       number: num,
-      details: {
-        name: extractedRecord.NAME || "Not Found",
-        fatherName: extractedRecord.fname || "Not Found",
-        address: extractedRecord.ADDRESS || "Not Found",
-        circle: extractedRecord.circle || "Not Found",
-        alternateNumber: extractedRecord.alt || "Not Found",
-        aadhaar: extractedRecord.id || "Not Found" ,
-        email: extractedRecord.email || "Not Found"
-      },
+      total_records: allFormattedRecords.length, // Shows how many records were found
+      details: allFormattedRecords, // Yeh ab ek array ban gaya hai jisme saare records honge
       developer: "@Zeno098",
-      bought_from: "WhatsApp: +63 962 065 8587 | Telegram: @Zeno098", // Yahan show hoga kahan se buy kiya hai
+      bought_from: "WhatsApp: +63 962 065 8587 | Telegram: @Zeno098",
       notice: "This API is exclusively for active users.",
       buy_more: "To buy more APIs, message on WhatsApp: +63 962 065 8587 or Telegram: @Zeno098"
     };
-
     // 9. Return Formatted (Pretty) JSON
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).send(JSON.stringify(cleanResponse, null, 2));
