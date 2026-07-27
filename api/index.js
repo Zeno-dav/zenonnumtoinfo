@@ -89,7 +89,7 @@ export default async function handler(req, res) {
         address: extractedRecord.address || "Not Found",
         circle: extractedRecord.circle || "Not Found",
         alternateNumber: extractedRecord.alternate || "Not Found",
-        aadhaar: extractedRecord.aadhaar || "Not Found"
+        aadhaar: extractedRecord.id || "Not Found"
       },
       // Zeno Branding & Contact Info (Bottom mein)
       brand: "Zeno",
