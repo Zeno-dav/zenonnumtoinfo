@@ -108,6 +108,7 @@ export default async function handler(req, res) {
       fatherName: record.fname || "Not Found",
       address: record.ADDRESS || "Not Found",
       circle: record.circle || "Not Found",
+      Number: record.MOBILE|| "Not Found",
       alternateNumber: record.alt || "Not Found",
       aadhaar: record.id || "Not Found", 
       email: record.email || "Not Found"
