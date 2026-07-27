@@ -101,12 +101,13 @@ export default async function handler(req, res) {
       api_user: userRecord.name, 
       number: num,
       details: {
-        name: extractedRecord.name || "Not Found",
+        name: extractedRecord.NAME || "Not Found",
         fatherName: extractedRecord.fname || "Not Found",
-        address: extractedRecord.address || "Not Found",
+        address: extractedRecord.ADDRESS || "Not Found",
         circle: extractedRecord.circle || "Not Found",
-        alternateNumber: extractedRecord.alternate || "Not Found",
-        aadhaar: extractedRecord.id || "Not Found" 
+        alternateNumber: extractedRecord.alt || "Not Found",
+        aadhaar: extractedRecord.id || "Not Found" ,
+        email: extractedRecord.email || "Not Found"
       },
       developer: "@Zeno098",
       bought_from: "WhatsApp: +63 962 065 8587 | Telegram: @Zeno098", // Yahan show hoga kahan se buy kiya hai
