@@ -4,11 +4,11 @@ import path from 'path';
 export default async function handler(req, res) {
   const { num, apiKey } = req.query;
 
-  // 1. API Key Check (Agar key na di ho)
+  // 1. API Key Check
   if (!apiKey) {
     return res.status(401).json({ 
       success: false, 
-      message: "API key missing. This API is exclusively for active users. To buy, message on WhatsApp: +63 962 065 8587 (Serious buyers only: Just sending 'hello' will not get a reply, state your requirement directly).",
+      message: "API key missing. This API is exclusively for active users. To buy, message on WhatsApp: +63 962 065 8587 (Serious buyers only: Just sending 'hello' will not get a reply).",
       developer: "@developer_NovaG"
     });
   }
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     keysData = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
   }
 
-  // 3. Validate API Key (Agar key galat ho)
+  // 3. Validate API Key
   const userRecord = keysData[apiKey];
   if (!userRecord) {
     return res.status(403).json({ 
@@ -31,18 +31,22 @@ export default async function handler(req, res) {
     });
   }
 
-  // 4. Check Expiry (Agar key ka time khatam ho gaya ho)
+  // 4. AUTOMATIC EXPIRY DATE CALCULATION
+  const startDate = new Date(userRecord.startDate);
+  const expiryDate = new Date(startDate);
+  expiryDate.setDate(expiryDate.getDate() + userRecord.days); // Start date mein days jod diye
+
   const currentTime = new Date();
-  if (currentTime > new Date(userRecord.expiryDate)) {
+  if (currentTime > expiryDate) {
     return res.status(403).json({ 
       success: false, 
-      message: "This API was expired",
+      message: `This API was expired on ${expiryDate.toDateString()}`,
       developer: "@developer_NovaG",
       contact: "To buy, message on WhatsApp: +63 962 065 8587"
     });
   }
 
-  // 5. Check num parameter (Agar number na diya ho)
+  // 5. Check num parameter
   if (!num) {
     return res.status(400).json({ 
       success: false, 
@@ -53,7 +57,7 @@ export default async function handler(req, res) {
   try {
     // 6. Upstream API se Data Fetch Karna
     const response = await fetch(
-      `https://hitech-info-noobster.com-dashbord63hh7qe4.workers.dev/search?mobile=${encodeURIComponent(num)}`
+      `https://free-api-anuragsingh.vercel.app/api/number?num=${encodeURIComponent(num)}`
     );
 
     if (!response.ok) {
@@ -62,43 +66,36 @@ export default async function handler(req, res) {
 
     const upstreamData = await response.json();
 
-    // 7. Data Extractor Logic (Ajeeb format ko normal mein badalna)
+    // 7. Data Extractor Logic
     let extractedRecord = {};
-    
-    // Agar data 'data' naam ke array ke andar hai
     if (upstreamData.data && Array.isArray(upstreamData.data) && upstreamData.data.length > 0) {
       extractedRecord = upstreamData.data[0]; 
-    } 
-    // Agar seedha array hai
-    else if (Array.isArray(upstreamData) && upstreamData.length > 0) {
+    } else if (Array.isArray(upstreamData) && upstreamData.length > 0) {
       extractedRecord = upstreamData[0];
-    }
-    // Agar direct object hai
-    else {
+    } else {
       extractedRecord = upstreamData;
     }
 
-    // 8. Ekdum Clean aur Normal JSON format banana
+    // 8. Ekdum Clean aur Normal JSON format (With User Name)
     const cleanResponse = {
       status: true,
       message: "Data fetched successfully",
+      api_user: userRecord.name, // <--- YAHAN USER KA NAAM AAYEGA
       number: num,
-            details: {
+      details: {
         name: extractedRecord.name || "Not Found",
         fatherName: extractedRecord.fname || "Not Found",
         address: extractedRecord.address || "Not Found",
         circle: extractedRecord.circle || "Not Found",
         alternateNumber: extractedRecord.alternate || "Not Found",
-        aadhaar: extractedRecord.id || "Not Found" 
+        aadhaar: extractedRecord.id || "Not Found" // ID mapping fixed
       },
-      // Zeno Branding & Contact Info (Bottom mein)
-    
-      developer: "@Zeno098",
+      developer: "@zeno098",
       notice: "This API is exclusively for active users.",
-      contact: "To buy this API, message on WhatsApp: +63 962 065 8587 (Serious buyers only: Just sending 'hello' will not get a reply)"
+      contact: "To buy this API, message on WhatsApp: +63 962 065 8587 (Serious buyers only)"
     };
 
-        // Return Formatted (Pretty) JSON
+    // 9. Return Formatted (Pretty) JSON taaki ek line mein na aaye
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).send(JSON.stringify(cleanResponse, null, 2));
 
