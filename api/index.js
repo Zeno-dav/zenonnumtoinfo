@@ -62,7 +62,7 @@ export default async function handler(req, res) {
   try {
     // 6. Upstream API se Data Fetch Karna
     const response = await fetch(
-      `https://hitech-info-noobster.com-dashbord63hh7qe4.workers.dev/search?mobile=${encodeURIComponent(num)}`
+      `https://osint.invalidayushh.workers.dev/num?key=bittu1410-14d-demo&q=${encodeURIComponent(num)}`
     );
 
     if (!response.ok) {
