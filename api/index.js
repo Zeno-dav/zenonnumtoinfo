@@ -86,9 +86,8 @@ export default async function handler(req, res) {
     } else if (upstreamData && typeof upstreamData === 'object') {
       rawDataArray = [upstreamData];
     }
-    
-    // 7.5 Agar data na mile (Data Not Found Check)
-    if (!rawDataArray || rawDataArray.length === 0 || !rawDataArray[0] || !rawDataArray[0].NAME) {
+      // 7.5 Agar data na mile (Data Not Found Check)
+    if (!rawDataArray || rawDataArray.length === 0) {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(200).send(JSON.stringify({
         status: false,
@@ -100,8 +99,11 @@ export default async function handler(req, res) {
       }, null, 2));
     }
 
-    // Map through ALL records and clean them up
-    const allFormattedRecords = rawDataArray.map(record => ({
+    // NAYA LOGIC: Pehle khali (empty) records hatao
+    const validRecords = rawDataArray.filter(record => record && record.NAME && record.NAME.trim() !== "");
+
+    // Phir unko format karo
+    const formattedRecords = validRecords.map(record => ({
       name: record.NAME || "Not Found",
       fatherName: record.fname || "Not Found",
       address: record.ADDRESS || "Not Found",
@@ -110,15 +112,37 @@ export default async function handler(req, res) {
       aadhaar: record.id || "Not Found", 
       email: record.email || "Not Found"
     }));
+
+    // NAYA LOGIC: Duplicate records ko remove karo (taaki ek jaise 2 result na aaye)
+    const uniqueRecords = formattedRecords.filter((value, index, self) =>
+      index === self.findIndex((t) => (
+        t.name === value.name && 
+        t.fatherName === value.fatherName && 
+        t.address === value.address
+      ))
+    );
     
-    // 8. Ekdum Clean aur Normal JSON format (With ALL records)
+    // Agar filter hone ke baad kuch na bache
+    if (uniqueRecords.length === 0) {
+       res.setHeader('Content-Type', 'application/json; charset=utf-8');
+       return res.status(200).send(JSON.stringify({
+        status: false,
+        message: "Database mein data nahi hai (Data not found)",
+        number: num,
+        brand: "Zeno",
+        developer: "@Zeno098",
+        bought_from: "WhatsApp: +63 962 065 8587 | Telegram: @Zeno098"
+      }, null, 2));
+    }
+
+    // 8. Ekdum Clean aur Normal JSON format 
     const cleanResponse = {
       status: true,
       message: "Data fetched successfully",
       api_user: userRecord.name, 
       number: num,
-      total_records: allFormattedRecords.length, // Shows how many records were found
-      details: allFormattedRecords, // Yeh ab ek array ban gaya hai jisme saare records honge
+      total_records: uniqueRecords.length, // Ab sirf asli records count honge
+      details: uniqueRecords, // Sirf saaf aur unique data
       developer: "@Zeno098",
       bought_from: "WhatsApp: +63 962 065 8587 | Telegram: @Zeno098",
       notice: "This API is exclusively for active users.",
