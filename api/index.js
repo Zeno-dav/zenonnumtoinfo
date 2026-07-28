@@ -8,9 +8,10 @@ export default async function handler(req, res) {
   if (!Key) {
     return res.status(401).json({ 
       success: false, 
-      message: "API key missing! To BUY this API, message on WhatsApp: +63 962 065 8587 or Telegram: @Zeno098",
-      buy_contact: "WhatsApp: +63 962 065 8587",
+      message: "API key missing! To BUY this API, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098",
+      buy_contact: "WhatsApp: +63 9620658587",
       telegram: "@Zeno098",
+      bot:"@No2infobot",
       developer: "@Zeno098"
     });
   }
@@ -28,9 +29,10 @@ export default async function handler(req, res) {
   if (!userRecord) {
     return res.status(403).json({ 
       success: false, 
-      message: "Invalid API key! To BUY a valid API, message on WhatsApp: +63 962 065 8587 or Telegram: @Zeno098",
+      message: "Invalid API key! To BUY a valid API, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098",
       buy_contact: "WhatsApp: +63 962 065 8587",
       telegram: "@Zeno098",
+      bot:"@No2infobot",
       developer: "@Zeno098"
     });
   }
@@ -44,9 +46,10 @@ export default async function handler(req, res) {
   if (currentTime > expiryDate) {
     return res.status(403).json({ 
       success: false, 
-      message: `This API expired on ${expiryDate.toDateString()}! To RENEW or BUY, message on WhatsApp: +63 962 065 8587 or Telegram: @Zeno098`,
-      buy_contact: "WhatsApp: +63 962 065 8587",
+      message: `This API expired on ${expiryDate.toDateString()}! To RENEW or BUY, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098`,
+      buy_contact: "WhatsApp: +63 9620658587",
       telegram: "@Zeno098",
+      bot:"@No2infobot",
       developer: "@Zeno098"
     });
   }
@@ -93,9 +96,9 @@ export default async function handler(req, res) {
         status: false,
         message: "Database mein data nahi hai (Data not found)",
         number: num,
-        brand: "Zeno",
         developer: "@Zeno098",
-        bought_from: "WhatsApp: +63 962 065 8587 | Telegram: @Zeno098"
+        bot:"@No2infobot",
+        bought_from: "WhatsApp: +63 9620658587 | Telegram: @Zeno098"
       }, null, 2));
     }
 
@@ -131,8 +134,9 @@ export default async function handler(req, res) {
         message: "Database mein data nahi hai (Data not found)",
         number: num,
         brand: "Zeno",
+        bot:"@No2infobot",
         developer: "@Zeno098",
-        bought_from: "WhatsApp: +63 962 065 8587 | Telegram: @Zeno098"
+        bought_from: "WhatsApp: +63 9620658587 | Telegram: @Zeno098"
       }, null, 2));
     }
 
@@ -145,9 +149,10 @@ export default async function handler(req, res) {
       total_records: uniqueRecords.length, // Ab sirf asli records count honge
       details: uniqueRecords, // Sirf saaf aur unique data
       developer: "@Zeno098",
-      bought_from: "WhatsApp: +63 962 065 8587 | Telegram: @Zeno098",
+      bot:"@No2infobot",
+      bought_from: "WhatsApp: +63 9620658587 | Telegram: @Zeno098",
       notice: "This API is exclusively for active users.",
-      buy_more: "To buy more APIs, message on WhatsApp: +63 962 065 8587 or Telegram: @Zeno098"
+      buy_more: "To buy more APIs, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098"
     };
     // 9. Return Formatted (Pretty) JSON
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
