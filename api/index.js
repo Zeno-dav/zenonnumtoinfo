@@ -105,7 +105,7 @@ export default async function handler(req, res) {
     }
 
     // Helper function to remove emojis from the start of the string (Optional but recommended)
-    const cleanValue = (val) => val ? val.replace(/^[\p{Emoji}\s]+/gu, '').trim() : "Not Found";
+    const cleanValue = (val) => val ? val.replace(/^[^a-zA-Z0-9]+/g, '').trim() : "Not Found";
 
     // NAYA LOGIC: Pehle khali (empty) records hatao
     const validRecords = rawDataArray.filter(record => record && record.name && record.name.trim() !== "");
