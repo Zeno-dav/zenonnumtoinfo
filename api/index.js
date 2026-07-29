@@ -103,7 +103,7 @@ export default async function handler(req, res) {
     }
 
     // NAYA LOGIC: Pehle khali (empty) records hatao
-    const validRecords = rawDataArray.filter(record => record && record.NAME && record.NAME.trim() !== "");
+    const validRecords = rawDataArray.filter(record => record && record.name && record.name.trim() !== "");
 
     // Phir unko format karo
     const formattedRecords = validRecords.map(record => ({
