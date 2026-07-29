@@ -76,10 +76,11 @@ export default async function handler(req, res) {
     // 7. Data Extractor Logic (Extract ALL records)
     let rawDataArray = [];
     
-    // Convert the upstream data into a proper array
-    if (upstreamData.data) {
+    // FIX: Extract from the "results" array as shown in the upstream API response
+    if (upstreamData.results && Array.isArray(upstreamData.results)) {
+      rawDataArray = upstreamData.results;
+    } else if (upstreamData.data) {
       if (typeof upstreamData.data === 'object' && !Array.isArray(upstreamData.data)) {
-        // Convert object like {"0": {...}, "1": {...}} into an array of objects
         rawDataArray = Object.values(upstreamData.data);
       } else if (Array.isArray(upstreamData.data)) {
         rawDataArray = upstreamData.data;
@@ -89,7 +90,8 @@ export default async function handler(req, res) {
     } else if (upstreamData && typeof upstreamData === 'object') {
       rawDataArray = [upstreamData];
     }
-      // 7.5 Agar data na mile (Data Not Found Check)
+
+    // 7.5 Agar data na mile (Data Not Found Check)
     if (!rawDataArray || rawDataArray.length === 0) {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(200).send(JSON.stringify({
@@ -102,19 +104,22 @@ export default async function handler(req, res) {
       }, null, 2));
     }
 
+    // Helper function to remove emojis from the start of the string (Optional but recommended)
+    const cleanValue = (val) => val ? val.replace(/^[\p{Emoji}\s]+/gu, '').trim() : "Not Found";
+
     // NAYA LOGIC: Pehle khali (empty) records hatao
     const validRecords = rawDataArray.filter(record => record && record.name && record.name.trim() !== "");
 
     // Phir unko format karo
     const formattedRecords = validRecords.map(record => ({
-      name: record.name || "Not Found",
-      fatherName: record.father_name || "Not Found",
-      address: record.address || "Not Found",
-      circle: record.circle || "Not Found",
-      Number: record.mobile|| "Not Found",
-      alternate: record.alt_mobile || "Not Found",
-      aadhaar: record.aadhar || "Not Found", 
-      email: record.email || "Not Found"
+      name: cleanValue(record.name),
+      fatherName: cleanValue(record.father_name),
+      address: cleanValue(record.address),
+      circle: cleanValue(record.circle),
+      Number: cleanValue(record.mobile),
+      alternate: cleanValue(record.alt_mobile),
+      aadhaar: cleanValue(record.aadhar), 
+      email: cleanValue(record.email)
     }));
 
     // NAYA LOGIC: Duplicate records ko remove karo (taaki ek jaise 2 result na aaye)
