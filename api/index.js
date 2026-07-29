@@ -65,7 +65,7 @@ export default async function handler(req, res) {
   try {
     // 6. Upstream API se Data Fetch Karna
     const response = await fetch(
-      `https://osint.invalidayushh.workers.dev/num?key=bittu1410-14d-demo&q=${encodeURIComponent(num)}`
+      `https://num-detils.hiteckgroup.workers.dev/?mobile=${encodeURIComponent(num)}`
     );
 
     if (!response.ok) {
@@ -107,13 +107,13 @@ export default async function handler(req, res) {
 
     // Phir unko format karo
     const formattedRecords = validRecords.map(record => ({
-      name: record.NAME || "Not Found",
-      fatherName: record.fname || "Not Found",
-      address: record.ADDRESS || "Not Found",
+      name: record.name || "Not Found",
+      fatherName: record.father_name || "Not Found",
+      address: record.address || "Not Found",
       circle: record.circle || "Not Found",
-      Number: record.MOBILE|| "Not Found",
-      alternate: record.alt || "Not Found",
-      aadhaar: record.id || "Not Found", 
+      Number: record.mobile|| "Not Found",
+      alternate: record.alt_mobile || "Not Found",
+      aadhaar: record.aadhar || "Not Found", 
       email: record.email || "Not Found"
     }));
 
