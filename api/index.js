@@ -11,7 +11,7 @@ export default async function handler(req, res) {
       message: "API key missing! To BUY this API, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098",
       buy_contact: "WhatsApp: +63 9620658587",
       telegram: "@Zeno098",
-      bot:"@No2infobot",
+      bot: "@No2infobot",
       developer: "@Zeno098"
     });
   }
@@ -30,9 +30,9 @@ export default async function handler(req, res) {
     return res.status(403).json({ 
       success: false, 
       message: "Invalid API key! To BUY a valid API, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098",
-      buy_contact: "WhatsApp: +63 962 065 8587",
+      buy_contact: "WhatsApp: +63 9620658587",
       telegram: "@Zeno098",
-      bot:"@No2infobot",
+      bot: "@No2infobot",
       developer: "@Zeno098"
     });
   }
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
       message: `This API expired on ${expiryDate.toDateString()}! To RENEW or BUY, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098`,
       buy_contact: "WhatsApp: +63 9620658587",
       telegram: "@Zeno098",
-      bot:"@No2infobot",
+      bot: "@No2infobot",
       developer: "@Zeno098"
     });
   }
@@ -63,9 +63,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 6. Upstream API se Data Fetch Karna
+    // 6. Upstream API Data Fetch
     const response = await fetch(
-      `https://num-detils.hiteckgroup.workers.dev/?mobile=${encodeURIComponent(num)}`
+      `https://bronx-web-api.onrender.com/api/key-bronx/number?key=tg-99&num=${encodeURIComponent(num)}`
     );
 
     if (!response.ok) {
@@ -73,10 +73,10 @@ export default async function handler(req, res) {
     }
 
     const upstreamData = await response.json();
-    // 7. Data Extractor Logic (Extract ALL records)
+
+    // 7. Data Extractor Logic
     let rawDataArray = [];
     
-    // FIX: Extract from the "results" array as shown in the upstream API response
     if (upstreamData.results && Array.isArray(upstreamData.results)) {
       rawDataArray = upstreamData.results;
     } else if (upstreamData.data) {
@@ -91,7 +91,7 @@ export default async function handler(req, res) {
       rawDataArray = [upstreamData];
     }
 
-    // 7.5 Agar data na mile (Data Not Found Check)
+    // 7.5 Check if data exists
     if (!rawDataArray || rawDataArray.length === 0) {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(200).send(JSON.stringify({
@@ -99,67 +99,74 @@ export default async function handler(req, res) {
         message: "Database mein data nahi hai (Data not found)",
         number: num,
         developer: "@Zeno098",
-        bot:"@No2infobot",
+        bot: "@No2infobot",
         bought_from: "WhatsApp: +63 9620658587 | Telegram: @Zeno098"
       }, null, 2));
     }
 
-    // Helper function to remove emojis from the start of the string (Optional but recommended)
-    const cleanValue = (val) => val ? val.replace(/^[^a-zA-Z0-9]+/g, '').trim() : "Not Found";
+    // Helper function to sanitize string values
+    const cleanValue = (val) => {
+      if (!val || val === "N/A" || val === "null" || val === "undefined") return "Not Found";
+      const cleaned = String(val).replace(/^[^a-zA-Z0-9]+/g, '').trim();
+      return cleaned.length > 0 ? cleaned : "Not Found";
+    };
 
-    // NAYA LOGIC: Pehle khali (empty) records hatao
-    const validRecords = rawDataArray.filter(record => record && record.name && record.name.trim() !== "");
+    // Filter empty records
+    const validRecords = rawDataArray.filter(record => record && record.name && String(record.name).trim() !== "");
 
-    // Phir unko format karo
+    // Format fields based on upstream structure
     const formattedRecords = validRecords.map(record => ({
       name: cleanValue(record.name),
-      fatherName: cleanValue(record.father_name),
+      fatherName: cleanValue(record.fname || record.father_name),
       address: cleanValue(record.address),
       circle: cleanValue(record.circle),
-      Number: cleanValue(record.mobile),
-      alternate: cleanValue(record.alt_mobile),
-      aadhaar: cleanValue(record.aadhar), 
-      email: cleanValue(record.email)
+      number: cleanValue(record.mobile),
+      alternateNumber: cleanValue(record.alt || record.alt_mobile),
+      idNumber: cleanValue(record.id || record.aadhar),
+      email: cleanValue(record.email),
+      truecallerName: cleanValue(record.truecaller_name)
     }));
 
-    // NAYA LOGIC: Duplicate records ko remove karo (taaki ek jaise 2 result na aaye)
+    // Deduplicate records based on key fields
     const uniqueRecords = formattedRecords.filter((value, index, self) =>
       index === self.findIndex((t) => (
         t.name === value.name && 
         t.fatherName === value.fatherName && 
-        t.address === value.address
+        t.address === value.address &&
+        t.number === value.number
       ))
     );
-    
-    // Agar filter hone ke baad kuch na bache
+
+    // Re-check after deduplication
     if (uniqueRecords.length === 0) {
-       res.setHeader('Content-Type', 'application/json; charset=utf-8');
-       return res.status(200).send(JSON.stringify({
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(200).send(JSON.stringify({
         status: false,
         message: "Database mein data nahi hai (Data not found)",
         number: num,
         brand: "Zeno",
-        bot:"@No2infobot",
+        bot: "@No2infobot",
         developer: "@Zeno098",
         bought_from: "WhatsApp: +63 9620658587 | Telegram: @Zeno098"
       }, null, 2));
     }
 
-    // 8. Ekdum Clean aur Normal JSON format 
+    // 8. Construct Final JSON Response
     const cleanResponse = {
       status: true,
       message: "Data fetched successfully",
       api_user: userRecord.name, 
       number: num,
-      total_records: uniqueRecords.length, // Ab sirf asli records count honge
-      details: uniqueRecords, // Sirf saaf aur unique data
+      total_records: uniqueRecords.length,
+      details: uniqueRecords,
       developer: "@Zeno098",
-      bot:"@No2infobot",
+      bot: "@No2infobot",
       bought_from: "WhatsApp: +63 9620658587 | Telegram: @Zeno098",
       notice: "This API is exclusively for active users.",
       buy_more: "To buy more APIs, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098"
     };
-    // 9. Return Formatted (Pretty) JSON
+
+    // 9. Return Formatted JSON
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).send(JSON.stringify(cleanResponse, null, 2));
 
