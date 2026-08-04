@@ -63,9 +63,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 6. Upstream API Data Fetch
+    // 6. Upstream API Data Fetch (Updated Endpoint)
     const response = await fetch(
-      `https://bronx-web-api.onrender.com/api/key-bronx/number?key=tg-99&num=${encodeURIComponent(num)}`
+      `https://num-to-info.sauravsingh2111.workers.dev/lookup/${encodeURIComponent(num)}`
     );
 
     if (!response.ok) {
@@ -74,17 +74,13 @@ export default async function handler(req, res) {
 
     const upstreamData = await response.json();
 
-    // 7. Data Extractor Logic
+    // 7. Data Extractor Logic for updated structure
     let rawDataArray = [];
     
-    if (upstreamData.results && Array.isArray(upstreamData.results)) {
+    if (upstreamData.data && Array.isArray(upstreamData.data)) {
+      rawDataArray = upstreamData.data;
+    } else if (upstreamData.results && Array.isArray(upstreamData.results)) {
       rawDataArray = upstreamData.results;
-    } else if (upstreamData.data) {
-      if (typeof upstreamData.data === 'object' && !Array.isArray(upstreamData.data)) {
-        rawDataArray = Object.values(upstreamData.data);
-      } else if (Array.isArray(upstreamData.data)) {
-        rawDataArray = upstreamData.data;
-      }
     } else if (Array.isArray(upstreamData)) {
       rawDataArray = upstreamData;
     } else if (upstreamData && typeof upstreamData === 'object') {
@@ -107,14 +103,14 @@ export default async function handler(req, res) {
     // Helper function to sanitize string values
     const cleanValue = (val) => {
       if (!val || val === "N/A" || val === "null" || val === "undefined") return "Not Found";
-      const cleaned = String(val).replace(/^[^a-zA-Z0-9]+/g, '').trim();
+      const cleaned = String(val).replace(/^[^a-zA-Z0-9\s,.-]+/g, '').trim();
       return cleaned.length > 0 ? cleaned : "Not Found";
     };
 
-    // Filter empty records
+    // Filter out empty/invalid records
     const validRecords = rawDataArray.filter(record => record && record.name && String(record.name).trim() !== "");
 
-    // Format fields based on upstream structure
+    // Format fields matching the new payload structure
     const formattedRecords = validRecords.map(record => ({
       name: cleanValue(record.name),
       fatherName: cleanValue(record.fname || record.father_name),
@@ -122,12 +118,11 @@ export default async function handler(req, res) {
       circle: cleanValue(record.circle),
       number: cleanValue(record.mobile),
       alternateNumber: cleanValue(record.alt || record.alt_mobile),
-      idNumber: cleanValue(record.id || record.aadhar),
-      email: cleanValue(record.email),
-      truecallerName: cleanValue(record.truecaller_name)
+      idNumber: cleanValue(record.id),
+      email: cleanValue(record.email)
     }));
 
-    // Deduplicate records based on key fields
+    // Remove duplicate entries
     const uniqueRecords = formattedRecords.filter((value, index, self) =>
       index === self.findIndex((t) => (
         t.name === value.name && 
@@ -137,7 +132,6 @@ export default async function handler(req, res) {
       ))
     );
 
-    // Re-check after deduplication
     if (uniqueRecords.length === 0) {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(200).send(JSON.stringify({
@@ -151,7 +145,7 @@ export default async function handler(req, res) {
       }, null, 2));
     }
 
-    // 8. Construct Final JSON Response
+    // 8. Final Clean JSON Output
     const cleanResponse = {
       status: true,
       message: "Data fetched successfully",
@@ -166,7 +160,7 @@ export default async function handler(req, res) {
       buy_more: "To buy more APIs, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098"
     };
 
-    // 9. Return Formatted JSON
+    // 9. Send response
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).send(JSON.stringify(cleanResponse, null, 2));
 
