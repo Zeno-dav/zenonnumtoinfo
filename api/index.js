@@ -21,7 +21,11 @@ export default async function handler(req, res) {
   let keysData = {};
   
   if (fs.existsSync(dbPath)) {
-    keysData = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+    try {
+      keysData = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+    } catch (e) {
+      return res.status(500).json({ success: false, message: "Error reading database." });
+    }
   }
 
   // 3. Validate API Key (Invalid Key)
@@ -54,6 +58,33 @@ export default async function handler(req, res) {
     });
   }
 
+  // ----------------------------------------------------
+  // NEW: DAILY LIMIT CHECK & TRACKING LOGIC
+  // ----------------------------------------------------
+  const todayStr = currentTime.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+  const dailyLimit = userRecord.dailyLimit || 100; // Default limit agar key mein mention na ho
+
+  // Check if usage record exists, else initialize
+  if (!userRecord.usage || userRecord.usage.date !== todayStr) {
+    userRecord.usage = {
+      date: todayStr,
+      count: 0
+    };
+  }
+
+  // Check if limit exceeded
+  if (userRecord.usage.count >= dailyLimit) {
+    return res.status(429).json({ 
+      success: false, 
+      message: `Daily limit reached! Your limit is ${dailyLimit} requests/day. Try again tomorrow or upgrade your plan.`,
+      daily_limit: dailyLimit,
+      used_today: userRecord.usage.count,
+      buy_contact: "WhatsApp: +63 9620658587",
+      developer: "@Zeno098"
+    });
+  }
+  // ----------------------------------------------------
+
   // 5. Check num parameter
   if (!num) {
     return res.status(400).json({ 
@@ -73,6 +104,15 @@ export default async function handler(req, res) {
     }
 
     const upstreamData = await response.json();
+
+    // Usage count increment karein aur database save karein
+    userRecord.usage.count += 1;
+    keysData[Key] = userRecord;
+    try {
+      fs.writeFileSync(dbPath, JSON.stringify(keysData, null, 2), 'utf8');
+    } catch (e) {
+      console.error("Could not write usage data to disk", e);
+    }
 
     // 7. Data Extractor Logic for updated structure
     let rawDataArray = [];
@@ -151,6 +191,11 @@ export default async function handler(req, res) {
       message: "Data fetched successfully",
       api_user: userRecord.name, 
       number: num,
+      usage: {
+        limit: dailyLimit,
+        used_today: userRecord.usage.count,
+        remaining: dailyLimit - userRecord.usage.count
+      },
       total_records: uniqueRecords.length,
       details: uniqueRecords,
       developer: "@Zeno098",
