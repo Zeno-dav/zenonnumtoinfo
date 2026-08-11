@@ -6,8 +6,8 @@ export default async function handler(req, res) {
 
   // 1. API Key Check (Missing Key)
   if (!Key) {
-    return res.status(401).json({ 
-      success: false, 
+    return res.status(401).json({
+      success: false,
       message: "API key missing! To BUY this API, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098",
       buy_contact: "WhatsApp: +63 9620658587",
       telegram: "@Zeno098",
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
   // 2. Load Keys Database
   const dbPath = path.join(process.cwd(), 'keys.json');
   let keysData = {};
-  
+
   if (fs.existsSync(dbPath)) {
     try {
       keysData = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
@@ -31,8 +31,8 @@ export default async function handler(req, res) {
   // 3. Validate API Key (Invalid Key)
   const userRecord = keysData[Key];
   if (!userRecord) {
-    return res.status(403).json({ 
-      success: false, 
+    return res.status(403).json({
+      success: false,
       message: "Invalid API key! To BUY a valid API, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098",
       buy_contact: "WhatsApp: +63 9620658587",
       telegram: "@Zeno098",
@@ -44,12 +44,12 @@ export default async function handler(req, res) {
   // 4. AUTOMATIC EXPIRY DATE CALCULATION (Expired Key)
   const startDate = new Date(userRecord.startDate);
   const expiryDate = new Date(startDate);
-  expiryDate.setDate(expiryDate.getDate() + userRecord.days); 
+  expiryDate.setDate(expiryDate.getDate() + userRecord.days);
 
   const currentTime = new Date();
   if (currentTime > expiryDate) {
-    return res.status(403).json({ 
-      success: false, 
+    return res.status(403).json({
+      success: false,
       message: `This API expired on ${expiryDate.toDateString()}! To RENEW or BUY, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098`,
       buy_contact: "WhatsApp: +63 9620658587",
       telegram: "@Zeno098",
@@ -74,8 +74,8 @@ export default async function handler(req, res) {
 
   // Check if limit exceeded
   if (userRecord.usage.count >= dailyLimit) {
-    return res.status(429).json({ 
-      success: false, 
+    return res.status(429).json({
+      success: false,
       message: `Daily limit reached! Your limit is ${dailyLimit} requests/day. Try again tomorrow or upgrade your plan.`,
       daily_limit: dailyLimit,
       used_today: userRecord.usage.count,
@@ -87,16 +87,16 @@ export default async function handler(req, res) {
 
   // 5. Check num parameter
   if (!num) {
-    return res.status(400).json({ 
-      success: false, 
-      message: "num parameter missing. Please provide a valid number." 
+    return res.status(400).json({
+      success: false,
+      message: "num parameter missing. Please provide a valid number."
     });
   }
 
   try {
-    // 6. Upstream API Data Fetch (Updated Endpoint)
+    // 6. Upstream API Data Fetch (Updated Endpoint based on user request)
     const response = await fetch(
-      `https://num-to-info.sauravsingh2111.workers.dev/lookup/${encodeURIComponent(num)}`
+      `https://hitech-info-noobster.com-dashbord63hh7qe4.workers.dev/search?mobile=${encodeURIComponent(num)}`
     );
 
     if (!response.ok) {
@@ -105,7 +105,7 @@ export default async function handler(req, res) {
 
     const upstreamData = await response.json();
 
-    // Usage count increment karein aur database save karein
+    // Usage count increment karein aur database save karein  
     userRecord.usage.count += 1;
     keysData[Key] = userRecord;
     try {
@@ -114,9 +114,10 @@ export default async function handler(req, res) {
       console.error("Could not write usage data to disk", e);
     }
 
-    // 7. Data Extractor Logic for updated structure
+    // 7. Data Extractor Logic for updated structure  
     let rawDataArray = [];
-    
+
+    // The image 1000216214.jpg shows the array is located inside the "data" object.
     if (upstreamData.data && Array.isArray(upstreamData.data)) {
       rawDataArray = upstreamData.data;
     } else if (upstreamData.results && Array.isArray(upstreamData.results)) {
@@ -127,7 +128,7 @@ export default async function handler(req, res) {
       rawDataArray = [upstreamData];
     }
 
-    // 7.5 Check if data exists
+    // 7.5 Check if data exists  
     if (!rawDataArray || rawDataArray.length === 0) {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(200).send(JSON.stringify({
@@ -140,17 +141,17 @@ export default async function handler(req, res) {
       }, null, 2));
     }
 
-    // Helper function to sanitize string values
+    // Helper function to sanitize string values  
     const cleanValue = (val) => {
       if (!val || val === "N/A" || val === "null" || val === "undefined") return "Not Found";
       const cleaned = String(val).replace(/^[^a-zA-Z0-9\s,.-]+/g, '').trim();
       return cleaned.length > 0 ? cleaned : "Not Found";
     };
 
-    // Filter out empty/invalid records
+    // Filter out empty/invalid records  
     const validRecords = rawDataArray.filter(record => record && record.name && String(record.name).trim() !== "");
 
-    // Format fields matching the new payload structure
+    // Format fields matching the new payload structure (Matches keys from 1000216214.jpg)
     const formattedRecords = validRecords.map(record => ({
       name: cleanValue(record.name),
       fatherName: cleanValue(record.fname || record.father_name),
@@ -162,11 +163,11 @@ export default async function handler(req, res) {
       email: cleanValue(record.email)
     }));
 
-    // Remove duplicate entries
+    // Remove duplicate entries  
     const uniqueRecords = formattedRecords.filter((value, index, self) =>
       index === self.findIndex((t) => (
-        t.name === value.name && 
-        t.fatherName === value.fatherName && 
+        t.name === value.name &&
+        t.fatherName === value.fatherName &&
         t.address === value.address &&
         t.number === value.number
       ))
@@ -185,11 +186,11 @@ export default async function handler(req, res) {
       }, null, 2));
     }
 
-    // 8. Final Clean JSON Output
+    // 8. Final Clean JSON Output  
     const cleanResponse = {
       status: true,
       message: "Data fetched successfully",
-      api_user: userRecord.name, 
+      api_user: userRecord.name,
       number: num,
       usage: {
         limit: dailyLimit,
@@ -205,7 +206,7 @@ export default async function handler(req, res) {
       buy_more: "To buy more APIs, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098"
     };
 
-    // 9. Send response
+    // 9. Send response  
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).send(JSON.stringify(cleanResponse, null, 2));
 
