@@ -41,7 +41,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // 4. AUTOMATIC EXPIRY DATE CALCULATION (Expired Key)
+  // 4. Automatic Expiry Date Calculation (Expired Key)
   const startDate = new Date(userRecord.startDate);
   const expiryDate = new Date(startDate);
   expiryDate.setDate(expiryDate.getDate() + userRecord.days);
@@ -58,13 +58,10 @@ export default async function handler(req, res) {
     });
   }
 
-  // ----------------------------------------------------
-  // NEW: DAILY LIMIT CHECK & TRACKING LOGIC
-  // ----------------------------------------------------
-  const todayStr = currentTime.toISOString().split('T')[0]; // Format: YYYY-MM-DD
-  const dailyLimit = userRecord.dailyLimit || 100; // Default limit agar key mein mention na ho
+  // 5. Daily Limit Check & Tracking
+  const todayStr = currentTime.toISOString().split('T')[0];
+  const dailyLimit = userRecord.dailyLimit || 100;
 
-  // Check if usage record exists, else initialize
   if (!userRecord.usage || userRecord.usage.date !== todayStr) {
     userRecord.usage = {
       date: todayStr,
@@ -72,7 +69,6 @@ export default async function handler(req, res) {
     };
   }
 
-  // Check if limit exceeded
   if (userRecord.usage.count >= dailyLimit) {
     return res.status(429).json({
       success: false,
@@ -83,9 +79,8 @@ export default async function handler(req, res) {
       developer: "@Zeno098"
     });
   }
-  // ----------------------------------------------------
 
-  // 5. Check num parameter
+  // 6. Check num parameter
   if (!num) {
     return res.status(400).json({
       success: false,
@@ -94,9 +89,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 6. Upstream API Data Fetch (Updated Endpoint based on user request)
+    // 7. Fetch from New Upstream Endpoint
     const response = await fetch(
-      `https://hitech-info-noobster.com-dashbord63hh7qe4.workers.dev/search?mobile=${encodeURIComponent(num)}`
+      `https://num-to-info.sauravsingh2111.workers.dev/lookup/${encodeURIComponent(num)}`
     );
 
     if (!response.ok) {
@@ -105,7 +100,7 @@ export default async function handler(req, res) {
 
     const upstreamData = await response.json();
 
-    // Usage count increment karein aur database save karein  
+    // Increment usage count and persist to DB
     userRecord.usage.count += 1;
     keysData[Key] = userRecord;
     try {
@@ -114,21 +109,16 @@ export default async function handler(req, res) {
       console.error("Could not write usage data to disk", e);
     }
 
-    // 7. Data Extractor Logic for updated structure  
+    // 8. Extract raw records array
     let rawDataArray = [];
-
-    // The image 1000216214.jpg shows the array is located inside the "data" object.
-    if (upstreamData.data && Array.isArray(upstreamData.data)) {
+    if (upstreamData && Array.isArray(upstreamData.data)) {
       rawDataArray = upstreamData.data;
-    } else if (upstreamData.results && Array.isArray(upstreamData.results)) {
-      rawDataArray = upstreamData.results;
     } else if (Array.isArray(upstreamData)) {
       rawDataArray = upstreamData;
     } else if (upstreamData && typeof upstreamData === 'object') {
       rawDataArray = [upstreamData];
     }
 
-    // 7.5 Check if data exists  
     if (!rawDataArray || rawDataArray.length === 0) {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(200).send(JSON.stringify({
@@ -141,17 +131,24 @@ export default async function handler(req, res) {
       }, null, 2));
     }
 
-    // Helper function to sanitize string values  
+    // Helper to sanitize & clean string values
     const cleanValue = (val) => {
-      if (!val || val === "N/A" || val === "null" || val === "undefined") return "Not Found";
-      const cleaned = String(val).replace(/^[^a-zA-Z0-9\s,.-]+/g, '').trim();
+      if (val === null || val === undefined || val === "null" || val === "undefined" || val === "N/A") {
+        return "Not Found";
+      }
+      const cleaned = String(val)
+        .replace(/!+/g, ', ') // Converts delimiter '!' from address into clean commas
+        .replace(/^[^a-zA-Z0-9\s,.-]+/g, '')
+        .trim();
       return cleaned.length > 0 ? cleaned : "Not Found";
     };
 
-    // Filter out empty/invalid records  
-    const validRecords = rawDataArray.filter(record => record && record.name && String(record.name).trim() !== "");
+    // Filter valid records containing a name
+    const validRecords = rawDataArray.filter(
+      record => record && record.name && String(record.name).trim() !== ""
+    );
 
-    // Format fields matching the new payload structure (Matches keys from 1000216214.jpg)
+    // Map upstream fields (matches mobile, fname, alt, circle, etc.)
     const formattedRecords = validRecords.map(record => ({
       name: cleanValue(record.name),
       fatherName: cleanValue(record.fname || record.father_name),
@@ -163,7 +160,7 @@ export default async function handler(req, res) {
       email: cleanValue(record.email)
     }));
 
-    // Remove duplicate entries  
+    // Deduplicate records
     const uniqueRecords = formattedRecords.filter((value, index, self) =>
       index === self.findIndex((t) => (
         t.name === value.name &&
@@ -186,7 +183,7 @@ export default async function handler(req, res) {
       }, null, 2));
     }
 
-    // 8. Final Clean JSON Output  
+    // 9. Send Clean Formatted Output
     const cleanResponse = {
       status: true,
       message: "Data fetched successfully",
@@ -206,7 +203,6 @@ export default async function handler(req, res) {
       buy_more: "To buy more APIs, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098"
     };
 
-    // 9. Send response  
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).send(JSON.stringify(cleanResponse, null, 2));
 
