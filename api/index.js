@@ -2,7 +2,12 @@ import fs from 'fs';
 import path from 'path';
 
 export const maxDuration = 60; 
+// Yeh line Vercel ko batayegi ki server India mein run karna hai
+export const config = { regions: ['bom1'] }; 
 
+export default async function handler(req, res) {
+// ... baaki ka pura code same rahega
+  
 export default async function handler(req, res) {
   const { num, Key } = req.query;
 
