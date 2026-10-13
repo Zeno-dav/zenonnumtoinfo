@@ -109,13 +109,18 @@ export default async function handler(req, res) {
       console.error("Could not write usage data to disk", e);
     }
 
-    // 8. Extract raw records array
+    // 8. Extract raw records array (Updated for upstream structure)
     let rawDataArray = [];
-    if (upstreamData && Array.isArray(upstreamData.data)) {
+    
+    // Naya extraction logic image ke structure ke mutabiq
+    if (upstreamData && upstreamData.hiteck_info && upstreamData.hiteck_info.data) {
+      // Hiteck info ek single object return kar raha hai, usko array mein wrap kar rahe hain
+      rawDataArray = [upstreamData.hiteck_info.data];
+    } else if (upstreamData && Array.isArray(upstreamData.data)) {
       rawDataArray = upstreamData.data;
     } else if (Array.isArray(upstreamData)) {
       rawDataArray = upstreamData;
-    } else if (upstreamData && typeof upstreamData === 'object') {
+    } else if (upstreamData && typeof upstreamData === 'object' && upstreamData.name) {
       rawDataArray = [upstreamData];
     }
 
