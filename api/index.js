@@ -1,25 +1,19 @@
 import fs from 'fs';
 import path from 'path';
 
-// VERCEL TIMEOUT FIX: Vercel ko function 60 seconds tak chalne ki permission dena
 export const maxDuration = 60; 
 
 export default async function handler(req, res) {
   const { num, Key } = req.query;
 
-  // 1. API Key Check (Missing Key)
   if (!Key) {
     return res.status(401).json({
       success: false,
       message: "API key missing! To BUY this API, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098",
-      buy_contact: "WhatsApp: +63 9620658587",
-      telegram: "@Zeno098",
-      bot: "@No2infobot",
-      developer: "@Zeno098"
+      buy_contact: "WhatsApp: +63 9620658587"
     });
   }
 
-  // 2. Load Keys Database
   const dbPath = path.join(process.cwd(), 'keys.json');
   let keysData = {};
 
@@ -31,95 +25,90 @@ export default async function handler(req, res) {
     }
   }
 
-  // 3. Validate API Key (Invalid Key)
   const userRecord = keysData[Key];
   if (!userRecord) {
     return res.status(403).json({
       success: false,
-      message: "Invalid API key! To BUY a valid API, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098",
-      buy_contact: "WhatsApp: +63 9620658587",
-      telegram: "@Zeno098",
-      bot: "@No2infobot",
-      developer: "@Zeno098"
+      message: "Invalid API key! To BUY a valid API, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098"
     });
   }
 
-  // 4. Automatic Expiry Date Calculation (Expired Key)
   const startDate = new Date(userRecord.startDate);
   const expiryDate = new Date(startDate);
   expiryDate.setDate(expiryDate.getDate() + userRecord.days);
-
   const currentTime = new Date();
+
   if (currentTime > expiryDate) {
     return res.status(403).json({
       success: false,
-      message: `This API expired on ${expiryDate.toDateString()}! To RENEW or BUY, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098`,
-      buy_contact: "WhatsApp: +63 9620658587",
-      telegram: "@Zeno098",
-      bot: "@No2infobot",
-      developer: "@Zeno098"
+      message: `This API expired on ${expiryDate.toDateString()}!`
     });
   }
 
-  // 5. Daily Limit Check & Tracking
   const todayStr = currentTime.toISOString().split('T')[0];
   const dailyLimit = userRecord.dailyLimit || 100;
 
   if (!userRecord.usage || userRecord.usage.date !== todayStr) {
-    userRecord.usage = {
-      date: todayStr,
-      count: 0
-    };
+    userRecord.usage = { date: todayStr, count: 0 };
   }
 
   if (userRecord.usage.count >= dailyLimit) {
     return res.status(429).json({
       success: false,
-      message: `Daily limit reached! Your limit is ${dailyLimit} requests/day. Try again tomorrow or upgrade your plan.`,
-      daily_limit: dailyLimit,
-      used_today: userRecord.usage.count,
-      buy_contact: "WhatsApp: +63 9620658587",
-      developer: "@Zeno098"
+      message: `Daily limit reached! Your limit is ${dailyLimit} requests/day.`
     });
   }
 
-  // 6. Check num parameter
   if (!num) {
-    return res.status(400).json({
-      success: false,
-      message: "num parameter missing. Please provide a valid number."
-    });
+    return res.status(400).json({ success: false, message: "num parameter missing." });
   }
 
   try {
-    // 7. Fetch from New Upstream Endpoint
+    // 🔴 BROWSER BYPASS HEADERS (Cloudflare ko bypass karne ke liye)
     const response = await fetch(
       `https://num-info.noobster11001.workers.dev/?key=@noob11001&num=${encodeURIComponent(num)}`,
       {
         method: 'GET',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Accept': '*/*'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9,hi;q=0.8',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+          'Sec-Ch-Ua-Mobile': '?0',
+          'Sec-Ch-Ua-Platform': '"Windows"',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1'
         }
       }
     );
 
     if (!response.ok) {
-      // Yahan hum exact error pakad rahe hain
       const errorText = await response.text();
       return res.status(response.status).json({ 
         success: false, 
-        message: "Upstream API error", 
+        message: "Upstream API error - Cloudflare is blocking Vercel", 
         status_code: response.status,
-        details: errorText.substring(0, 200) // Cloudflare ka error message dikhayega
+        details: errorText.substring(0, 300) 
       });
     }
 
     const upstreamData = await response.json();
 
-    // 8. Extract raw records array
+    // Usage update code jo aapne picchle code se hata diya tha, wo maine wapas add kar diya hai
+    userRecord.usage.count += 1;
+    keysData[Key] = userRecord;
+    try {
+      fs.writeFileSync(dbPath, JSON.stringify(keysData, null, 2), 'utf8');
+    } catch (e) {
+      console.error("Error saving usage", e);
+    }
+
     let rawDataArray = [];
-    
     if (upstreamData && upstreamData.hiteck_info && upstreamData.hiteck_info.data) {
       rawDataArray = [upstreamData.hiteck_info.data];
     } else if (upstreamData && Array.isArray(upstreamData.data)) {
@@ -131,35 +120,23 @@ export default async function handler(req, res) {
     }
 
     if (!rawDataArray || rawDataArray.length === 0) {
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(200).send(JSON.stringify({
         status: false,
         message: "Database mein data nahi hai (Data not found)",
         number: num,
-        developer: "@Zeno098",
         bot: "@No2infobot",
-        bought_from: "WhatsApp: +63 9620658587 | Telegram: @Zeno098"
+        bought_from: "WhatsApp: +63 9620658587"
       }, null, 2));
     }
 
-    // Helper to sanitize & clean string values
     const cleanValue = (val) => {
-      if (val === null || val === undefined || val === "null" || val === "undefined" || val === "N/A") {
-        return "Not Found";
-      }
-      const cleaned = String(val)
-        .replace(/!+/g, ', ') // Converts delimiter '!' from address into clean commas
-        .replace(/^[^a-zA-Z0-9\s,.-]+/g, '')
-        .trim();
+      if (val === null || val === undefined || val === "null" || val === "undefined" || val === "N/A") return "Not Found";
+      const cleaned = String(val).replace(/!+/g, ', ').replace(/^[^a-zA-Z0-9\s,.-]+/g, '').trim();
       return cleaned.length > 0 ? cleaned : "Not Found";
     };
 
-    // Filter valid records containing a name
-    const validRecords = rawDataArray.filter(
-      record => record && record.name && String(record.name).trim() !== ""
-    );
+    const validRecords = rawDataArray.filter(record => record && record.name && String(record.name).trim() !== "");
 
-    // Map upstream fields (matches mobile, fname, alt, circle, etc.)
     const formattedRecords = validRecords.map(record => ({
       name: cleanValue(record.name),
       fatherName: cleanValue(record.fname || record.father_name),
@@ -171,30 +148,19 @@ export default async function handler(req, res) {
       email: cleanValue(record.email)
     }));
 
-    // Deduplicate records
     const uniqueRecords = formattedRecords.filter((value, index, self) =>
-      index === self.findIndex((t) => (
-        t.name === value.name &&
-        t.fatherName === value.fatherName &&
-        t.address === value.address &&
-        t.number === value.number
-      ))
+      index === self.findIndex((t) => (t.name === value.name && t.address === value.address && t.number === value.number))
     );
 
     if (uniqueRecords.length === 0) {
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(200).send(JSON.stringify({
         status: false,
         message: "Database mein data nahi hai (Data not found)",
         number: num,
-        brand: "Zeno",
-        bot: "@No2infobot",
-        developer: "@Zeno098",
-        bought_from: "WhatsApp: +63 9620658587 | Telegram: @Zeno098"
+        bought_from: "WhatsApp: +63 9620658587"
       }, null, 2));
     }
 
-    // 9. Send Clean Formatted Output
     const cleanResponse = {
       status: true,
       message: "Data fetched successfully",
@@ -208,10 +174,7 @@ export default async function handler(req, res) {
       total_records: uniqueRecords.length,
       details: uniqueRecords,
       developer: "@Zeno098",
-      bot: "@No2infobot",
-      bought_from: "WhatsApp: +63 9620658587 | Telegram: @Zeno098",
-      notice: "This API is exclusively for active users.",
-      buy_more: "To buy more APIs, message on WhatsApp: +63 9620658587 or Telegram: @Zeno098"
+      bought_from: "WhatsApp: +63 9620658587"
     };
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
