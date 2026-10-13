@@ -1,4 +1,4 @@
-Import fs from 'fs';
+import fs from 'fs';
 import path from 'path';
 
 export default async function handler(req, res) {
@@ -89,9 +89,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 7. Fetch from New Upstream Endpoint
+    // 7. Fetch from New Upstream Endpoint (Yahan Headers add kiye hain "fetch failed" fix karne ke liye)
     const response = await fetch(
-      `https://num-info.noobster11001.workers.dev/?key=@noob11001&num=${encodeURIComponent(num)}`
+      `https://num-info.noobster11001.workers.dev/?key=@noob11001&num=${encodeURIComponent(num)}`,
+      {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json, text/plain, */*'
+        }
+      }
     );
 
     if (!response.ok) {
@@ -109,12 +116,10 @@ export default async function handler(req, res) {
       console.error("Could not write usage data to disk", e);
     }
 
-        // 8. Extract raw records array
+    // 8. Extract raw records array (Yahan naye format ka logic add kiya hai)
     let rawDataArray = [];
     
-    // Naya extraction logic image ke structure ke mutabiq
     if (upstreamData && upstreamData.hiteck_info && upstreamData.hiteck_info.data) {
-      // Hiteck info ek single object return kar raha hai, usko array mein wrap kar rahe hain
       rawDataArray = [upstreamData.hiteck_info.data];
     } else if (upstreamData && Array.isArray(upstreamData.data)) {
       rawDataArray = upstreamData.data;
