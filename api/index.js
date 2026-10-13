@@ -109,12 +109,11 @@ export default async function handler(req, res) {
       console.error("Could not write usage data to disk", e);
     }
 
-    // 8. Extract raw records array (Updated for upstream structure)
+    // 8. Extract raw records array (SIRF YAHAN CHANGE HAI)
     let rawDataArray = [];
     
-    // Naya extraction logic image ke structure ke mutabiq
+    // Yahan hum new API se `hiteck_info.data` nikal rahe hain
     if (upstreamData && upstreamData.hiteck_info && upstreamData.hiteck_info.data) {
-      // Hiteck info ek single object return kar raha hai, usko array mein wrap kar rahe hain
       rawDataArray = [upstreamData.hiteck_info.data];
     } else if (upstreamData && Array.isArray(upstreamData.data)) {
       rawDataArray = upstreamData.data;
@@ -136,13 +135,14 @@ export default async function handler(req, res) {
       }, null, 2));
     }
 
+    // YAHAN SE SAB KUCH AAPKA ORIGINAL HAI
     // Helper to sanitize & clean string values
     const cleanValue = (val) => {
       if (val === null || val === undefined || val === "null" || val === "undefined" || val === "N/A") {
         return "Not Found";
       }
       const cleaned = String(val)
-        .replace(/!+/g, ', ') // Converts delimiter '!' from address into clean commas
+        .replace(/!+/g, ', ') 
         .replace(/^[^a-zA-Z0-9\s,.-]+/g, '')
         .trim();
       return cleaned.length > 0 ? cleaned : "Not Found";
@@ -153,7 +153,7 @@ export default async function handler(req, res) {
       record => record && record.name && String(record.name).trim() !== ""
     );
 
-    // Map upstream fields (matches mobile, fname, alt, circle, etc.)
+    // Map upstream fields
     const formattedRecords = validRecords.map(record => ({
       name: cleanValue(record.name),
       fatherName: cleanValue(record.fname || record.father_name),
