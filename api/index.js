@@ -91,7 +91,7 @@ export default async function handler(req, res) {
   try {
     // 7. Fetch from New Upstream Endpoint
     const response = await fetch(
-      `https://num-to-info.sauravsingh2111.workers.dev/lookup/${encodeURIComponent(num)}`
+      `https://num-info.noobster11001.workers.dev/?key=@noob11001&num=${encodeURIComponent(num)}`
     );
 
     if (!response.ok) {
