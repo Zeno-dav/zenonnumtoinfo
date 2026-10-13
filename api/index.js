@@ -92,33 +92,30 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 7. Fetch from New Upstream Endpoint (Headers added for Cloudflare bypass)
+    // 7. Fetch from New Upstream Endpoint
     const response = await fetch(
       `https://num-info.noobster11001.workers.dev/?key=@noob11001&num=${encodeURIComponent(num)}`,
       {
         method: 'GET',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'application/json, text/plain, */*',
-          'Cache-Control': 'no-cache'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': '*/*'
         }
       }
     );
 
     if (!response.ok) {
-      return res.status(response.status).json({ success: false, message: "Upstream API error" });
+      // Yahan hum exact error pakad rahe hain
+      const errorText = await response.text();
+      return res.status(response.status).json({ 
+        success: false, 
+        message: "Upstream API error", 
+        status_code: response.status,
+        details: errorText.substring(0, 200) // Cloudflare ka error message dikhayega
+      });
     }
 
     const upstreamData = await response.json();
-
-    // Increment usage count and persist to DB
-    userRecord.usage.count += 1;
-    keysData[Key] = userRecord;
-    try {
-      fs.writeFileSync(dbPath, JSON.stringify(keysData, null, 2), 'utf8');
-    } catch (e) {
-      console.error("Could not write usage data to disk", e);
-    }
 
     // 8. Extract raw records array
     let rawDataArray = [];
